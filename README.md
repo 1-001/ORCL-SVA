@@ -12,7 +12,7 @@ You can install the required dependency packages for our environment by using th
 
 ## Reproducing the experiments:
 
-1. You can directly use the ``dataset`` we have processed: [Google Drive Link](https://drive.google.com/drive/folders/1P42XsDWeMqAW33oS0gGamXEqxYiMjO5i?usp=drive_link)
+1.You can directly use the ``dataset`` we have processed: [Google Drive Link](https://drive.google.com/drive/folders/1P42XsDWeMqAW33oS0gGamXEqxYiMjO5i?usp=drive_link)
 
 2.Run ``method/gress_train.py``. After running, you can retrain the ``model`` and obtain results.
 
