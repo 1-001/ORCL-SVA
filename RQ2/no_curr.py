@@ -20,10 +20,9 @@ num_epochs = 100
 learning_rate = 5e-5
 lr = 5e-5
 
-# 定义参数类
 class Args:
     def __init__(self):
-        self.pacing_function = 'linear'  # 可以选择 pacing 函数
+        
         self.batch_size = 16
         self.max_seq_length = 512
         self.use_cuda = True
@@ -46,10 +45,10 @@ def read_prompt_examples(filename, is_train=False):
     examples = []
 
     data = pd.read_excel(filename).astype(str)
-    # 将 DataFrame 转换为字典列表，然后根据 'score' 排序
+    
 
     if is_train:
-        # 对训练集按照 'score' 列进行排序
+        
         data = data.sort_values(by='score')
     desc = data['description'].tolist()
     code = data['abstract_func_before'].tolist()
@@ -66,12 +65,12 @@ def read_prompt_examples(filename, is_train=False):
     return examples
 
 
-# 加载模型和模板
+
 plm, tokenizer, model_config, WrapperClass = load_plm(model_name, pretrainedmodel_path)
 template_text = 'The code snippet: {"placeholder":"text_a"} The vulnerability description: {"placeholder":"text_b"} {"soft":"Classify the severity:"} {"mask"}'
 mytemplate = MixedTemplate(tokenizer=tokenizer, text=template_text, model=plm)
 
-# 定义 Verbalizer
+
 myverbalizer = ManualVerbalizer(tokenizer, classes=classes,
                                 label_words={
                                     "LOW": ["low", "slight"],
@@ -81,7 +80,7 @@ myverbalizer = ManualVerbalizer(tokenizer, classes=classes,
                                 })
 
 
-# 定义损失函数
+
 class CORALOrdinalLoss(torch.nn.Module):
     def __init__(self, num_classes):
         super(CORALOrdinalLoss, self).__init__()
@@ -96,7 +95,7 @@ class CORALOrdinalLoss(torch.nn.Module):
         return loss
 
 
-# 定义模型
+
 class CORALPromptModelWithLinear(nn.Module):
     def __init__(self, prompt_model, num_classes):
         super(CORALPromptModelWithLinear, self).__init__()
@@ -110,7 +109,7 @@ class CORALPromptModelWithLinear(nn.Module):
         return logits
 
 
-# 测试模型
+
 def test(coral_model, test_dataloader, name):
     num_test_steps = len(test_dataloader)
     progress_bar = tqdm(range(num_test_steps))
@@ -146,8 +145,8 @@ def test(coral_model, test_dataloader, name):
     return acc, spearman_corr, mse, mze, macro_f1, mcc
 
 
-# 主程序
-traination_data = read_prompt_examples(r"E:\wjy\ordinal regression\code\complete_test_data_with_absolute_errors.xlsx", is_train=False)
+
+traination_data = read_prompt_examples(r"E:\wjy\ordinal regression\code\train.xlsx", is_train=False)
 train_dataloader = PromptDataLoader(
     dataset=traination_data,
     template=mytemplate,
@@ -165,7 +164,7 @@ max_steps = num_epochs * len(train_dataloader)/2
 save_steps = len(train_dataloader)
 warmup_steps = len(train_dataloader)
 num_train_epochs = num_epochs
-# 加载验证集
+
 validation_data = read_prompt_examples(r"C:\Users\Admin\Desktop\data_c++\valid.xlsx", is_train=False)
 validation_dataloader = PromptDataLoader(
     dataset=validation_data,
@@ -198,13 +197,13 @@ test_dataloader = PromptDataLoader(
 )
 # Optimizer parameters
 no_decay = ['bias', 'LayerNorm.weight']
-# 初始化模型
+
 coral_model = CORALPromptModelWithLinear(
     PromptForClassification(plm=plm, template=mytemplate, verbalizer=myverbalizer, freeze_plm=False), num_class)
 if args.use_cuda:
     coral_model = coral_model.cuda()
 coral_loss_func = CORALOrdinalLoss(num_class)
-# 设置优化器和学习率调度器
+
 optimizer1 = AdamW(coral_model.parameters(), lr=lr)
 optimizer2 = AdamW(
         [{'params': [p for n, p in coral_model.prompt_model.template.named_parameters() if "raw_embedding" not in n],'weight_decay': 0.01}],
@@ -214,24 +213,7 @@ scheduler1 = get_linear_schedule_with_warmup(optimizer1,
 scheduler2 = get_linear_schedule_with_warmup(optimizer2,
                                                  num_training_steps=num_epochs * len(train_dataloader),
                                                  num_warmup_steps=num_epochs * len(train_dataloader))
-# optimizer_grouped_parameters1 = [
-#     {'params': [p for n, p in coral_model.parameters() if not any(nd in n for nd in no_decay)],
-#      'weight_decay': 0.01},
-#     {'params': [p for n, p in coral_model.parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.01}
-# ]
-# # Using different optimizer for prompt parameters and model parameters
-# optimizer_grouped_parameters2 = [
-#     {'params': [p for n, p in coral_model.prompt_model.template.named_parameters() if "raw_embedding" not in n]}
-# ]
-# optimizer1 = AdamW(optimizer_grouped_parameters1, lr=lr)  # learning rate for model parameters
-# optimizer2 = AdamW(optimizer_grouped_parameters2, lr=5e-5)  # learning rate for prompt parameters
-#
-# num_training_steps = num_epochs * len(train_dataloader)
-# scheduler1 = get_linear_schedule_with_warmup(optimizer1, num_warmup_steps=0,
-#                                              num_training_steps=num_training_steps)  # set warmup steps
-# scheduler2 = get_linear_schedule_with_warmup(optimizer2, num_warmup_steps=0,
-#                                              num_training_steps=num_training_steps)  # set warmup steps
-# 训练
+
 global_step = 0
 all_step = 0
 tr_loss = 0.0
@@ -243,48 +225,13 @@ skip_early_stop_count = 0
 early_stop_threshold = 10
 num_training_steps = num_epochs * len(train_dataloader)
 progress_bar = tqdm(range(num_training_steps))
-# # 读取和排序数据
-# data = pd.read_excel(r"E:\wjy\ordinal regression\code\complete_test_data_with_absolute_errors.xlsx").sort_values(by='score')
-#
-# # 计算前 33% 的样本数
-# num_samples = int(len(data) * 0.33)
-#
-# # 提取前 33% 的数据并将其转为 InputExample 格式
-# subset_data = data.iloc[:num_samples]
-# examples = []
-# desc = subset_data['description'].tolist()
-# code = subset_data['abstract_func_before'].tolist()
-# severity = subset_data['severity'].tolist()
-# for idx in range(len(subset_data)):
-#     examples.append(
-#         InputExample(
-#             guid=idx,
-#             text_a=' '.join(code[idx].split(' ')[:384]),
-#             text_b=' '.join(desc[idx].split(' ')[:64]),
-#             tgt_text=int(severity[idx]),
-#         )
-#     )
-#
-# # 创建新的训练数据加载器
-# train_dataloader = PromptDataLoader(
-#     dataset=examples,
-#     template=mytemplate,
-#     tokenizer=tokenizer,
-#     tokenizer_wrapper_class=WrapperClass,
-#     max_seq_length=args.max_seq_length,
-#     batch_size=args.batch_size,
-#     shuffle=True,
-#     teacher_forcing=False,
-#     predict_eos_token=False,
-#     truncate_method="tail",
-#     decoder_max_length=3
-# )
+
 use_cuda = True
-# 早停参数
-patience = 10  # 早停耐心值
-early_stop_count = 0  # 早停计数器
-best_metric = float('inf')  # 初始化最佳指标为正无穷大
-subset_percentage = 0.33  # 初始子集比例，可根据需求调整
+
+patience = 10  
+early_stop_count = 0  
+best_metric = float('inf')  
+subset_percentage = 0.33  
 output_dir = "result_log"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
@@ -334,7 +281,7 @@ for epoch in range(num_epochs):
         if early_stop_count == early_stop_threshold:
             print("early stopping!!!")
             break
-# 测试集评估
+
 print("\nFinal Test:")
 coral_model.load_state_dict(torch.load(os.path.join(output_dir, "best.ckpt"), map_location=torch.device('cuda:0')))
 test(coral_model, test_dataloader, name="test")
