@@ -1,6 +1,6 @@
-# Improving Prompt Tuning-based Software Vulnerability Assessment by Fusing Source Code and Vulnerability Description
+# Improving Ordinal Regression-based Software Vulnerability Assessment via Curriculum Learning
 
-This is the source code to the paper "Improving Prompt Tuning-based Software Vulnerability Assessment by Fusing Source Code and Vulnerability Description". Please refer to the paper for the experimental details.
+This is the source code to the paper "Improving Ordinal Regression-based Software Vulnerability Assessment via Curriculum Learning". Please refer to the paper for the experimental details.
 
 ## Approach
 ![](https://github.com/1-001/ORCL-SVA/blob/main/method/framework.png)
