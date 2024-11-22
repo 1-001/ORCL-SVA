@@ -17,9 +17,9 @@ from lightgbm import LGBMClassifier
 from sklearn.metrics import mean_squared_error
 
 # Load datasets
-train_df = pd.read_excel(r'E:\wjy\PT-SVA\SOTitlePlus\data\processed_train.xlsx')
-test_df = pd.read_excel(r'E:\wjy\PT-SVA\SOTitlePlus\data\processed_test.xlsx')
-valid_df = pd.read_excel(r'E:\wjy\PT-SVA\SOTitlePlus\data\processed_valid.xlsx')
+train_df = pd.read_excel(r'E:\data\processed_train.xlsx')
+test_df = pd.read_excel(r'E:\data\processed_test.xlsx')
+valid_df = pd.read_excel(r'E:\data\processed_valid.xlsx')
 
 # Extract Year (if necessary)
 # Ensure 'Year' column exists or extract from ID if needed
