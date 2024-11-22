@@ -14,7 +14,7 @@ from openprompt import PromptForClassification
 from torch import nn
 from transformers import AdamW, get_linear_schedule_with_warmup
 from tqdm.auto import tqdm
-from pacing_functions import PACING_FUNCTIONS  # 引入 pacing_functions
+from pacing_functions import PACING_FUNCTIONS  
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 pacing_function="root_10"
@@ -34,7 +34,7 @@ classes = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 def read_data_to_dataframe(filename,is_train=False):
     data = pd.read_excel(filename).astype(str)
     if is_train:
-        # 对训练集按照 'score' 列进行排序
+        
         data = data.sort_values(by='score')
     return data[['abstract_func_before', 'description', 'severity']]
 
@@ -80,7 +80,7 @@ plm, tokenizer, model_config, WrapperClass = load_plm("roberta", pretrainedmodel
 # Construct template
 template_text = 'The code snippet: {"placeholder":"text_a"} The vulnerability description: {"placeholder":"text_b"} {"soft":"Classify the severity:"} {"mask"}'
 mytemplate = MixedTemplate(tokenizer=tokenizer, text=template_text,model=plm)
-# 定义损失函数
+
 class CORALOrdinalLoss(torch.nn.Module):
     def __init__(self, num_classes):
         super(CORALOrdinalLoss, self).__init__()
@@ -95,7 +95,7 @@ class CORALOrdinalLoss(torch.nn.Module):
         return loss
 
 
-# 定义模型
+
 class CORALPromptModelWithLinear(nn.Module):
     def __init__(self, prompt_model, num_classes):
         super(CORALPromptModelWithLinear, self).__init__()
@@ -109,7 +109,7 @@ class CORALPromptModelWithLinear(nn.Module):
         return logits
 
 
-# 测试模型
+
 def test(coral_model, test_dataloader, name):
     num_test_steps = len(test_dataloader)
     progress_bar = tqdm(range(num_test_steps))
@@ -174,13 +174,13 @@ if use_cuda:
 
 # Optimizer parameters
 no_decay = ['bias', 'LayerNorm.weight']
-# 初始化模型
+
 coral_model = CORALPromptModelWithLinear(
     PromptForClassification(plm=plm, template=mytemplate, verbalizer=myverbalizer, freeze_plm=False), num_class)
 if use_cuda:
     coral_model = coral_model.cuda()
 coral_loss_func = CORALOrdinalLoss(num_class)
-# 设置优化器和学习率调度器
+
 optimizer1 = AdamW(coral_model.parameters(), lr=lr)
 optimizer2 = AdamW(
         [{'params': [p for n, p in coral_model.prompt_model.template.named_parameters() if "raw_embedding" not in n],'weight_decay': 0.01}],
@@ -190,11 +190,7 @@ scheduler1 = get_linear_schedule_with_warmup(optimizer1,
 scheduler2 = get_linear_schedule_with_warmup(optimizer2,
                                                  num_training_steps=num_epochs * len(train_dataloader),
                                                  num_warmup_steps=num_epochs * len(train_dataloader))
-# optimizer_grouped_parameters1 = [
-# Test function
 
-
-# Training and evaluation
 output_dir = "vultypeprompt3_log"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
@@ -209,19 +205,19 @@ skip_early_stop_count = 0
 early_stop_threshold = 10
 num_training_steps = num_epochs * len(train_dataloader)
 progress_bar = tqdm(range(num_training_steps))
-# 早停参数
-patience = 10  # 早停耐心值
-early_stop_count = 0  # 早停计数器
-best_metric = float('inf')  # 初始化最佳指标为正无穷大
-subset_percentage = 0.33  # 初始子集比例，可根据需求调整
+
+patience = 10  
+early_stop_count = 0  
+best_metric = float('inf')  
+subset_percentage = 0.33  
 
 for epoch in range(num_epochs):
-    early_stop_count = 0  # 早停计数器
-    # 计算当前子集数据量
+    early_stop_count = 0  
+    
     subset_length = int(len(dataset["train"]) * subset_percentage)
     train_data_subset = dataset["train"][:subset_length]
 
-    # 创建训练数据加载器
+   
     train_dataloader = PromptDataLoader(
         dataset=train_data_subset,
         template=mytemplate,
@@ -236,7 +232,7 @@ for epoch in range(num_epochs):
         decoder_max_length=3
     )
 
-    for inner_epoch in range(num_epochs):  # 每个子集的训练循环
+    for inner_epoch in range(num_epochs):  
         coral_model.train()
         tot_loss = 0
 
@@ -260,27 +256,27 @@ for epoch in range(num_epochs):
                 avg_loss = tot_loss / (step + 1)
                 print(f"Subset {subset_percentage * 100:.1f}%, Epoch: {epoch}, Step: {step + 1}, Loss: {avg_loss}")
 
-        # 验证
+        
         coral_model.eval()
         acc, spearman_corr, mse, mze, macro_f1, mcc = test(coral_model, validation_dataloader,
                                                            f"validation_subset_{subset_percentage * 100:.1f}_epoch_{epoch}")
 
-        # 检查是否有更好的模型
+        
         if mse < best_metric:
             best_metric = mse
             torch.save(coral_model.state_dict(), './best_model.ckpt')
             print(f"Best model saved with mse: {best_metric}")
-            early_stop_count = 0  # 重置早停计数器
+            early_stop_count = 0  
         else:
             early_stop_count += 1
             print(f"No improvement in MSE. Early stop counter: {early_stop_count}/{patience}")
 
-        # 检查是否达到早停条件
+        
         if early_stop_count >= patience:
             print("Early stopping for this subset triggered.")
-            break  # 停止当前子集的训练
+            break 
 
-    # 更新到更大的数据子集
+    
     if pacing_function != "":
         curriculum_iterations = num_training_steps/2
         new_data_fraction = min(1, PACING_FUNCTIONS[pacing_function](all_step, curriculum_iterations, c0))
@@ -289,15 +285,15 @@ for epoch in range(num_epochs):
             now_percent = percent
             print(f"Updating training data to {now_percent} samples.")
             early_stop_count=0
-    subset_percentage = new_data_fraction  # 增加子集比例
+    subset_percentage = new_data_fraction 
 
 
-# 检查是否完成全部数据集的训练
+
     if subset_percentage >= 1.0 and early_stop_count==10:
         print("Training on all data subsets complete.")
-        break  # 结束整个训练过程
+        break  
 
 
-# 加载最佳模型并测试
+
 coral_model.load_state_dict(torch.load('./best_model.ckpt'))
 test(coral_model, test_dataloader, "test")
