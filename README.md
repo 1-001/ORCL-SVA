@@ -3,7 +3,7 @@
 This is the source code to the paper "Improving Prompt Tuning-based Software Vulnerability Assessment by Fusing Source Code and Vulnerability Description". Please refer to the paper for the experimental details.
 
 ## Approach
-![](https://github.com/1-001/ORCL-SVA/blob/main/method/Framework.pdf)
+![](https://github.com/1-001/ORCL-SVA/blob/main/method/framework.png)
 ## About dataset.
 Due to the large size of the datasets, we have stored them in Google Drive: [Dataset Link](https://drive.google.com/drive/folders/1P42XsDWeMqAW33oS0gGamXEqxYiMjO5i?usp=drive_link)
 
