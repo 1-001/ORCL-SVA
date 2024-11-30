@@ -1,6 +1,6 @@
-# Improving Ordinal Regression-based Software Vulnerability Assessment via Curriculum Learning
+# ORCL-SVA:Enhancing Ordinal Regression-based Software Vulnerability Assessment via Difficulty Measure-based Curriculum Learning
 
-This is the source code to the paper "Improving Ordinal Regression-based Software Vulnerability Assessment via Curriculum Learning". Please refer to the paper for the experimental details.
+This is the source code to the paper "ORCL-SVA:Enhancing Ordinal Regression-based Software Vulnerability Assessment via Difficulty Measure-based Curriculum Learning". Please refer to the paper for the experimental details.
 
 ## Approach
 ![](https://github.com/1-001/ORCL-SVA/blob/main/method/framework.png)
